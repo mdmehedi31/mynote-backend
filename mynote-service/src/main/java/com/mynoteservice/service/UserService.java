@@ -11,21 +11,35 @@ import com.mynoteservice.exceptionhandler.NotFoundException;
 import com.mynoteservice.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
-    private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    @Autowired
+    private UserRepository userRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Override
     public UserResponseDTO createUser(UserRequestDTO userRequestDTO) {
@@ -166,5 +180,65 @@ public class UserService implements IUserService {
             log.error("An Exception thrown :: ", e);
             return new ApiResponse("User deletion failed");
         }
+    }
+
+    @Override
+    public Page<UserResponseDTO> getUsersByUserInterests(List<String> selectedInterests, int page, int size) {
+        int skip = page * size;
+        Pageable pageable = PageRequest.of(page, size);
+        List<org.springframework.data.mongodb.core.aggregation.AggregationOperation> pipelines = new ArrayList<>();
+
+        if (selectedInterests != null && !selectedInterests.isEmpty()) {
+            List<Pattern> interestsPattern = selectedInterests.stream()
+                    .filter(interest -> interest != null && !interest.trim().isEmpty())
+                    .map(interest -> Pattern.compile("^" + Pattern.quote(interest.trim()) + "$", Pattern.CASE_INSENSITIVE))
+                    .collect(Collectors.toList());
+
+            interestsPattern.forEach(e->{
+                log.info(e.toString()+",");
+            });
+            pipelines.add(Aggregation.match(Criteria.where("interests").in(interestsPattern)));
+        }
+
+        pipelines.add(Aggregation.project("name", "email", "interests", "role")
+                .andExpression("_id").as("id"));
+
+        pipelines.add(Aggregation.group("id")
+                .first("name").as("name")
+                .first("email").as("email")
+                .first("interests").as("interests")
+                .first("role").as("role"));
+
+        pipelines.add(Aggregation.skip((long) skip));
+        pipelines.add(Aggregation.limit(size));
+
+        Aggregation aggregation = Aggregation.newAggregation(pipelines);
+
+      /*  Aggregation aggregation = Aggregation.newAggregation(
+
+                Aggregation.match(Criteria.where("interests").in(selectedInterests)),
+
+                Aggregation.project("name", "email", "interests","role")
+                        .andExpression("_id").as("id"),
+
+                Aggregation.group("id")
+                        .first("name").as("name")
+                        .first("email").as("email")
+                        .first("interests").as("interests")
+                        .first("role").as("role"),
+
+                Aggregation.skip((long) skip),
+                Aggregation.limit(size)
+        );*/
+        AggregationResults<UserResponseDTO> results = mongoTemplate.aggregate(
+                aggregation, "users", UserResponseDTO.class);
+        List<UserResponseDTO> userList = results.getMappedResults();
+        Query countQuery = new Query();
+        if (selectedInterests != null && !selectedInterests.isEmpty()) {
+            countQuery.addCriteria(Criteria.where("interests").in(selectedInterests));
+        }
+        long totalElements = mongoTemplate.count(countQuery, "users");
+        //return results.getMappedResults();
+        return new PageImpl<>(userList, pageable, totalElements);
     }
 }

@@ -6,9 +6,12 @@ import com.mynotelibrary.dto.UserResponseDTO;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
 import com.mynoteservice.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -45,6 +48,14 @@ public class UserController {
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable String userId) {
         ApiResponse apiResponse = userService.deleteUser(userId);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/by-interests")
+    public ResponseEntity<Page<UserResponseDTO>> getUsersByUserInterests( @RequestParam(required = false) List<String> interests,
+                                                                        @RequestParam(defaultValue = "0") int page,
+                                                                        @RequestParam(defaultValue = "10") int size) {
+        Page<UserResponseDTO> users = userService.getUsersByUserInterests(interests, page, size);
+        return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
 
