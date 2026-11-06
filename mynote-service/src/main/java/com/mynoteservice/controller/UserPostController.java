@@ -45,13 +45,13 @@ public class UserPostController {
     }
 
     @GetMapping("/posts-by-creator")
-    public ResponseEntity<Page<UserWithPostDTO>> getUserPosts(
+    public ResponseEntity<Page<UserPostResponse>> getUserPosts(
             @RequestParam String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Page<UserWithPostDTO> response = userPostService.getAllUserPostsByUserId(userId, page, size);
-        return ResponseEntity.ok(response);
+        Page<UserPostResponse> response = userPostService.getAllUserPostsByUserId(userId, page, size);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/get-posts")

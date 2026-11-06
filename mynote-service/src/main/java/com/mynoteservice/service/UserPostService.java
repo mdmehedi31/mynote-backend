@@ -153,38 +153,31 @@ public class UserPostService implements IUserPostService {
     }
 
     @Override
-    public Page<UserWithPostDTO> getAllUserPostsByUserId(String userId, int page, int size) {
+    public Page<UserPostResponse> getAllUserPostsByUserId(String userId, int page, int size) {
         int skip = page * size;
         Pageable pageable = PageRequest.of(page, size);
-        org.bson.types.ObjectId targetUserId = new org.bson.types.ObjectId(userId);
-        log.info("User id is : " + userId);
 
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(targetUserId)),
-                context -> new org.bson.Document("$lookup", new org.bson.Document("from", "user_posts")
-                        .append("let", new org.bson.Document("userObjId", "$_id"))
-                        .append("pipeline", java.util.List.of(
-                                new org.bson.Document("$match", new org.bson.Document("$expr",
-                                        new org.bson.Document("$eq", java.util.List.of("$createdById", new org.bson.Document("$toString", "$$userObjId")))
-                                )),
-                                new org.bson.Document("$sort", new org.bson.Document("createdAt", -1)),
-                                new org.bson.Document("$skip", skip),
-                                new org.bson.Document("$limit", size)
-                        ))
-                        .append("as", "userPosts"))
+                Aggregation.match(Criteria.where("createdById").is(userId)),
+                Aggregation.sort(Sort.Direction.DESC, "createdAt"),
+                Aggregation.skip(skip),
+                Aggregation.limit(size),
+                Aggregation.project()
+                        .and("_id").as("id")
+                        .and("content").as("content")
+                        .and("createdById").as("createdBy")
         );
 
-        AggregationResults<UserWithPostDTO> results = mongoTemplate.aggregate(
+        List<UserPostResponse> postList = mongoTemplate.aggregate(
                 aggregation,
-                "users",
-                UserWithPostDTO.class
-        );
-        List<UserWithPostDTO> userList = results.getMappedResults();
+                "user_posts",
+                UserPostResponse.class
+        ).getMappedResults();
 
-        Query countQuery = new Query(Criteria.where("_id").is(targetUserId));
-        long totalElements = mongoTemplate.count(countQuery, "users");
+        Query countQuery = new Query(Criteria.where("createdById").is(userId));
+        long totalElements = mongoTemplate.count(countQuery, "user_posts");
 
-        return new PageImpl<>(userList, pageable, totalElements);
+        return new PageImpl<>(postList, pageable, totalElements);
     }
 
 

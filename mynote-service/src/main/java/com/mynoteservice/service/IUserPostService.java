@@ -15,7 +15,7 @@ public interface IUserPostService {
     public UserPostResponse updateUserPost(UserPostRequestDTO userPostRequestDTO);
     public UserPostResponse getUserPostById(String postId);
     public ApiResponse deleteUserPost(String postId);
-    public Page<UserWithPostDTO> getAllUserPostsByUserId(String userId, int page, int pageSize);
+    public Page<UserPostResponse> getAllUserPostsByUserId(String userId, int page, int pageSize);
 
     public Page<UserPostResponse> getAllUsersPosts(int page, int pageSize);
 
