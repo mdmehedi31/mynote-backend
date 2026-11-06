@@ -21,6 +21,9 @@ public class UserPostResponse extends ApiResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDateTime createdAt;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String createdByEmail;
+
     public UserPostResponse(String message) {
         super(message);
     }
@@ -66,5 +69,13 @@ public class UserPostResponse extends ApiResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getCreatedByEmail() {
+        return createdByEmail;
+    }
+
+    public void setCreatedByEmail(String createdByEmail) {
+        this.createdByEmail = createdByEmail;
     }
 }

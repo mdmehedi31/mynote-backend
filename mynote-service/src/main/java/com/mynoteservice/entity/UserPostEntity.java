@@ -19,7 +19,6 @@ public class UserPostEntity {
 
     @Id
     private String id;
-
     private String content;
     private String createdById;
     private LocalDateTime createdAt;

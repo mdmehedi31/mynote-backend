@@ -4,6 +4,7 @@ package com.mynoteservice.service;
 import com.mynotelibrary.dto.UserPostRequestDTO;
 import com.mynotelibrary.dto.UserPostResponse;
 import com.mynotelibrary.dto.UserWithPostDTO;
+import com.mynotelibrary.enums.SUCCESS;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
 import com.mynoteservice.entity.UserPostEntity;
 import com.mynoteservice.exceptionhandler.InvalidInputException;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
+import org.springframework.data.mongodb.core.aggregation.StringOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
@@ -141,7 +144,7 @@ public class UserPostService implements IUserPostService {
             }
 
             userPostRepository.delete(userPostEntity.get());
-            return new ApiResponse("User Post Deleted Successfully");
+            return new ApiResponse(SUCCESS.SUCCESS.name());
 
         }catch (NotFoundException e){
             log.error(" :::> An exception thrown : ",e);
@@ -184,13 +187,40 @@ public class UserPostService implements IUserPostService {
         return new PageImpl<>(userList, pageable, totalElements);
     }
 
-    @Override
-    public Page<UserPostResponse> getAllUsersPostsBy(int page, int pageSize) {
-        Pageable pageable = PageRequest.of(page, pageSize);
 
-        Page<UserPostEntity> userPostResponsePage= userPostRepository.findAll(pageable);
+    public Page<UserPostResponse> getAllUsersPosts(int page, int size) {
+        long totalElements = mongoTemplate.count(new Query(), "user_posts");
 
-        return null;
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.addFields().addField("cleanedCreatedById")
+                        .withValue(StringOperators.Trim.valueOf("$createdById"))
+                        .build(),
+                Aggregation.addFields().addField("createdByIdObj")
+                        .withValue(ConvertOperators.ToObjectId.toObjectId("$cleanedCreatedById"))
+                        .build(),
+                Aggregation.lookup("users", "createdByIdObj", "_id", "author"),
+                Aggregation.unwind("$author", true),
+                Aggregation.sort(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"),
+                Aggregation.project()
+                        .and("_id").as("id")
+                        .and("createdById").as("createdById")
+                        .and("author.name").as("createdByName")
+                        .and("author.email").as("createdByEmail")
+                        .and("content").as("content"),
+                Aggregation.skip((long) page * size),
+                Aggregation.limit(size)
+        );
+
+        List<UserPostResponse> postList = mongoTemplate.aggregate(
+                aggregation,
+                "user_posts",
+                UserPostResponse.class
+        ).getMappedResults();
+
+        return new PageImpl<>(
+                postList,
+                PageRequest.of(page, size > 0 ? size : 10),
+                totalElements
+        );
     }
-
 }

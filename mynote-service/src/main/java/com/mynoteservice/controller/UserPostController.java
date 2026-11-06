@@ -53,4 +53,12 @@ public class UserPostController {
         Page<UserWithPostDTO> response = userPostService.getAllUserPostsByUserId(userId, page, size);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/get-posts")
+    public ResponseEntity<Page<UserPostResponse>> getUserPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        Page<UserPostResponse> userPosts = userPostService.getAllUsersPosts(page, size);
+        return new ResponseEntity<>(userPosts, HttpStatus.OK);
+    }
 }
