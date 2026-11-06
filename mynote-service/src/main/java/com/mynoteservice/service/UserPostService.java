@@ -3,6 +3,7 @@ package com.mynoteservice.service;
 
 import com.mynotelibrary.dto.UserPostRequestDTO;
 import com.mynotelibrary.dto.UserPostResponse;
+import com.mynotelibrary.dto.UserWithPostDTO;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
 import com.mynoteservice.entity.UserPostEntity;
 import com.mynoteservice.exceptionhandler.InvalidInputException;
@@ -11,17 +12,31 @@ import com.mynoteservice.repository.UserPostRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.mongodb.core.query.Query;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class UserPostService implements IUserPostService {
 
     @Autowired
     private UserPostRepository userPostRepository;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     private static final Logger log = LoggerFactory.getLogger(UserPostService.class);
 
@@ -139,7 +154,38 @@ public class UserPostService implements IUserPostService {
     }
 
     @Override
-    public List<UserPostResponse> getAllUserPostsByUserId(String userId, int page, int pageSize) {
-        return List.of();
+    public Page<UserWithPostDTO> getAllUserPostsByUserId(String userId, int page, int size) {
+        int skip = page * size;
+        Pageable pageable = PageRequest.of(page, size);
+        org.bson.types.ObjectId targetUserId = new org.bson.types.ObjectId(userId);
+        log.info("User id is : " + userId);
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(targetUserId)),
+                context -> new org.bson.Document("$lookup", new org.bson.Document("from", "user_posts")
+                        .append("let", new org.bson.Document("userObjId", "$_id"))
+                        .append("pipeline", java.util.List.of(
+                                new org.bson.Document("$match", new org.bson.Document("$expr",
+                                        new org.bson.Document("$eq", java.util.List.of("$createdById", new org.bson.Document("$toString", "$$userObjId")))
+                                )),
+                                new org.bson.Document("$sort", new org.bson.Document("createdAt", -1)),
+                                new org.bson.Document("$skip", skip),
+                                new org.bson.Document("$limit", size)
+                        ))
+                        .append("as", "userPosts"))
+        );
+
+        AggregationResults<UserWithPostDTO> results = mongoTemplate.aggregate(
+                aggregation,
+                "users",
+                UserWithPostDTO.class
+        );
+        List<UserWithPostDTO> userList = results.getMappedResults();
+
+        Query countQuery = new Query(Criteria.where("_id").is(targetUserId));
+        long totalElements = mongoTemplate.count(countQuery, "users");
+
+        return new PageImpl<>(userList, pageable, totalElements);
     }
+
 }
