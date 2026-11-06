@@ -8,7 +8,7 @@ public interface IUserService {
 
     public UserResponseDTO createUser(UserRequestDTO userRequestDTO);
     public UserResponseDTO updateUser(UserRequestDTO userRequestDTO);
-    public UserResponseDTO getUser(String userId);
+    public UserResponseDTO getUserByIdOrEmail(String userId, String email);
     public ApiResponse deleteUser(String userId);
 
 }

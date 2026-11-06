@@ -35,9 +35,9 @@ public class UserService implements IUserService {
                 throw new InvalidInputException("Email can be empty");
             }
 
-            UserEntity userIsExist = userRepository.findByEmail(userRequestDTO.getEmail());
-            if (userIsExist!=null){
-                return new UserResponseDTO("Email already exists");
+            Optional<UserEntity> userIsExist = userRepository.findByEmail(userRequestDTO.getEmail());
+            if (userIsExist.isPresent()){
+                return new UserResponseDTO("User already exist with this email");
             }
             UserEntity user = new UserEntity();
             user.setCreatedAt(LocalDateTime.now());
@@ -81,6 +81,9 @@ public class UserService implements IUserService {
 
         if (userRequestDTO.getName()!=null && !userRequestDTO.getName().isBlank()){
             userEntity.setName(userRequestDTO.getName());
+        }else if (userRequestDTO.getEmail()!=null && !userRequestDTO.getEmail().isBlank()){
+            String userName = userRequestDTO.getEmail().split("@")[0];
+            userEntity.setName(userName);
         }
 
         if(userRequestDTO.getRole() != null && !userRequestDTO.getRole().isBlank()){
@@ -125,18 +128,20 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public UserResponseDTO getUser(String userId) {
+    public UserResponseDTO getUserByIdOrEmail(String userId, String email) {
         try {
-            Optional<UserEntity> userEntity = userRepository.findById(userId);
+            Optional<UserEntity> userEntity =null;
 
-            if (!userEntity.isPresent()){
-                throw new NotFoundException("User not found");
+            if(userId != null ){
+                userEntity = userRepository.findById(userId);
+            } else if (email != null && !email.isBlank()) {
+                userEntity= userRepository.findByEmail(email);
+            }
+
+            if (userEntity==null || !userEntity.isPresent()){
+                return new UserResponseDTO("User not found");
             }
             return userResponseDTOFromEntity(userEntity.get());
-        }catch (NotFoundException e){
-            log.error("An Exception thrown : ", e);
-            return new UserResponseDTO(e.getMessage());
-
         }
         catch (Exception e){
             log.error("An Exception thrown :: ", e);

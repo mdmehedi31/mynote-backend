@@ -4,7 +4,7 @@ package com.mynoteservice.controller;
 import com.mynotelibrary.dto.UserPostRequestDTO;
 import com.mynotelibrary.dto.UserPostResponse;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
-import com.mynoteservice.service.UserPostService;
+import com.mynoteservice.service.IUserPostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserPostController {
 
     @Autowired
-    private UserPostService userPostService;
+    private IUserPostService userPostService;
 
     @PostMapping("/create")
     public ResponseEntity<UserPostResponse> createUserPost(@RequestBody UserPostRequestDTO userPostRequestDTO) {
@@ -24,7 +24,7 @@ public class UserPostController {
         return new ResponseEntity<>(userPostResponse, HttpStatus.CREATED);
     }
 
-    @PutMapping("/update")
+    @PatchMapping("/update")
     public ResponseEntity<UserPostResponse> updateUserPost(@RequestBody UserPostRequestDTO userPostRequestDTO) {
         UserPostResponse userPostResponse = userPostService.updateUserPost(userPostRequestDTO);
         return new ResponseEntity<>(userPostResponse, HttpStatus.OK);

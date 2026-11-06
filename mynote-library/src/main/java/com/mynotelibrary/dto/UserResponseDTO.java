@@ -1,6 +1,7 @@
 package com.mynotelibrary.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
 
 import java.time.LocalDateTime;
@@ -8,11 +9,22 @@ import java.util.List;
 
 public class UserResponseDTO extends ApiResponse {
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String id;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String name;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String email;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<String> interests;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String role;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDateTime createdAt;
 
     public UserResponseDTO(String message) {
