@@ -13,7 +13,7 @@ public interface INoteService {
     public NoteResponseDTO getNoteById(String noteId);
     public ApiResponse deleteNoteById(String noteId);
 
-    public Page<NoteResponseDTO> getAllNotes(String userId,int page, int size,
+    public Page<NoteResponseDTO> getAllNotes(String createdById,int page, int size,
                                              String sortBy, String sortDir, String search);
 
 }

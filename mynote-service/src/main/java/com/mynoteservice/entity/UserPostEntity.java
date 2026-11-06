@@ -2,11 +2,19 @@ package com.mynoteservice.entity;
 
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document(collection = "user_posts")
+@CompoundIndexes(
+        {
+                @CompoundIndex(name = "created_by_created_at_idx",def = "{'createdById':1, 'createdAt':-1}"),
+                @CompoundIndex(name = "global_created_at_desc_idx", def = "{'createdAt':-1}")
+        }
+)
 public class UserPostEntity {
 
     @Id

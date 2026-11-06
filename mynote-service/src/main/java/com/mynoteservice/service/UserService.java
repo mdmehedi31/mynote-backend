@@ -106,16 +106,13 @@ public class UserService implements IUserService {
             Optional<UserEntity> userEntity = userRepository.findById(userRequestDTO.getId());
 
             if (!userEntity.isPresent()){
-                throw new NotFoundException("User not found");
+                return new UserResponseDTO("User not found");
             }
             UserEntity user = userEntity.get();
             userEntityFromDTO(userRequestDTO, user);
             user=userRepository.save(user);
             return userResponseDTOFromEntity(user);
 
-        }catch (NotFoundException e){
-            log.error("An Exception thrown : ", e);
-            return new UserResponseDTO(e.getMessage());
         }
         catch (InvalidInputException e){
             log.error("An Exception thrown :: ", e);

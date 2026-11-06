@@ -2,6 +2,7 @@ package com.mynoteservice.entity;
 
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -13,9 +14,12 @@ public class UserEntity {
     @Id
     private String id;
     private String name;
-   // @Indexed(unique = true)
+
+    @Indexed(unique = true)
     private String email;
     private String password;
+
+    @Indexed
     private List<String> interests;
     private String role;
     private LocalDateTime createdAt;

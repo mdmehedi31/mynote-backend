@@ -2,16 +2,21 @@ package com.mynoteservice.entity;
 
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document(collection = "notes")
+@CompoundIndexes({
+        @CompoundIndex(name = "user_id_created_at_idx", def = "{'createdById':1,'createdAt':-1}")
+})
 public class NoteEntity {
 
     @Id
     private String id;
-    private String userId;
+    private String createdById;
     private String title;
     private String content;
     private LocalDateTime createdAt;
@@ -24,12 +29,12 @@ public class NoteEntity {
         this.id = id;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getCreatedById() {
+        return createdById;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setCreatedById(String createdById) {
+        this.createdById = createdById;
     }
 
     public String getTitle() {

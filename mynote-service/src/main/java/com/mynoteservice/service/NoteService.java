@@ -41,7 +41,7 @@ public class NoteService implements INoteService {
 
             NoteEntity noteEntity = new NoteEntity();
             noteEntity.setCreatedAt(LocalDateTime.now());
-            noteEntity.setUserId(note.getUserId());
+            noteEntity.setCreatedById(note.getUserId());
             createNoteEntity(note, noteEntity);
 
             noteEntity = noteRepository.save(noteEntity);
@@ -76,7 +76,7 @@ public class NoteService implements INoteService {
         NoteResponseDTO noteResponseDTO = new NoteResponseDTO();
         noteResponseDTO.setId(noteEntity.getId());
         noteResponseDTO.setContent(noteEntity.getContent());
-        noteResponseDTO.setUserId(noteEntity.getUserId());
+        noteResponseDTO.setUserId(noteEntity.getCreatedById());
 
         if (noteEntity.getTitle() != null) {
             noteResponseDTO.setTitle(noteEntity.getTitle());
@@ -161,34 +161,28 @@ public class NoteService implements INoteService {
     }
 
     @Override
-    public Page<NoteResponseDTO> getAllNotes(String userId, int page, int size, String sortBy, String sortDir,String search) {
+    public Page<NoteResponseDTO> getAllNotes(String createdById, int page, int size, String sortBy, String sortDir, String search) {
 
-        try{
+        Sort.Direction sortingOrder = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
 
-            Sort.Direction sortingOrder = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortingOrder, sortBy));
+        Page<NoteEntity> pageResponse;
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by( sortingOrder,sortBy));
-            Page<NoteEntity> pageResponse;
-
-            log.info("Page able information is : " + pageable);
-            if (search != null && !search.isBlank()) {
-                pageResponse= noteRepository.findAllByUserIdAndTitleContainingIgnoreCaseOrUserIdAndContentContaining(userId,search, userId,search,pageable);
-            }else {
-                pageResponse = noteRepository.findByUserId(userId, pageable);
-            }
-            return pageResponse.map(this::convertToNoteResponseDTO);
-
-        }catch (Exception e){
-            log.error("Note Get <::> An Exception thrown : ",e);
-            return null;
+        log.info("Page able information is : " + pageable);
+        if (search != null && !search.isBlank()) {
+            pageResponse = noteRepository.findAllByCreatedByIdAndTitleContainingIgnoreCaseOrCreatedByIdAndContentContaining(createdById, search, createdById, search, pageable);
+        } else {
+            pageResponse = noteRepository.findByCreatedById(createdById, pageable);
         }
+
+        return pageResponse.map(this::convertToNoteResponseDTO);
     }
 
     private NoteResponseDTO convertToNoteResponseDTO(NoteEntity noteEntity) {
         NoteResponseDTO noteResponseDTO = new NoteResponseDTO();
         noteResponseDTO.setId(noteEntity.getId());
         noteResponseDTO.setContent(noteEntity.getContent()!=null ? noteEntity.getContent() : null);
-        noteResponseDTO.setUserId(noteEntity.getUserId());
+        noteResponseDTO.setUserId(noteEntity.getCreatedById());
         noteResponseDTO.setTitle(noteEntity.getTitle()!=null ? noteEntity.getTitle() : null);
         return noteResponseDTO;
     }
