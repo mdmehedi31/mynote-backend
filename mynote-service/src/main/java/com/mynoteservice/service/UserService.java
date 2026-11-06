@@ -12,10 +12,7 @@ import com.mynoteservice.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
@@ -82,7 +79,7 @@ public class UserService implements IUserService {
         userResponseDTO.setEmail(userEntity.getEmail());
         userResponseDTO.setName(userEntity.getName() != null ? userEntity.getName() : null);
         userResponseDTO.setCreatedAt(userEntity.getCreatedAt());
-        userResponseDTO.setRole(userEntity.getRole() != null ? userEntity.getRole() : "USER");
+        userResponseDTO.setRole(userEntity.getRole() != null ? UserRole.valueOf(userEntity.getRole()) : UserRole.USER);
         userResponseDTO.setInterests(userEntity.getInterests().isEmpty() ? null : userEntity.getInterests());
         return userResponseDTO;
     }
@@ -100,8 +97,8 @@ public class UserService implements IUserService {
             userEntity.setName(userName);
         }
 
-        if(userRequestDTO.getRole() != null && !userRequestDTO.getRole().isBlank()){
-            userEntity.setRole(userRequestDTO.getRole());
+        if(userRequestDTO.getRole() != null){
+            userEntity.setRole(userRequestDTO.getRole().name());
         }else{
             userEntity.setRole(UserRole.USER.name());
         }
@@ -240,5 +237,23 @@ public class UserService implements IUserService {
         long totalElements = mongoTemplate.count(countQuery, "users");
         //return results.getMappedResults();
         return new PageImpl<>(userList, pageable, totalElements);
+    }
+
+    @Override
+    public Page<UserResponseDTO> getAllUsers(int page, int size,String sortBy, String sortDir) {
+        Sort.Direction sortingOrder = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortingOrder, sortBy));
+
+        Page<UserEntity> userEntityPage = userRepository.findAll(pageable);
+
+        return userEntityPage.map(this::userResponseDTOFromEntity);
+    }
+
+    private UserResponseDTO convertToUserResponseDTO(UserEntity userEntity){
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
+        userResponseDTO.setId(userEntity.getId());
+        userResponseDTO.setEmail(userEntity.getEmail());
+        userResponseDTO.setName(userEntity.getName()!=null?userEntity.getName():null);
+        return userResponseDTO;
     }
 }

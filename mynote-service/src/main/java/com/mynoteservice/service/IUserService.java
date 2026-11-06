@@ -14,5 +14,6 @@ public interface IUserService {
     public UserResponseDTO getUserByIdOrEmail(String userId, String email);
     public ApiResponse deleteUser(String userId);
     public Page<UserResponseDTO> getUsersByUserInterests(List<String> selectedInterests, int page, int size);
+    public Page<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String sortDir);
 
 }

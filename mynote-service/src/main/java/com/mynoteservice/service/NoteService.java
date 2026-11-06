@@ -3,6 +3,7 @@ package com.mynoteservice.service;
 
 import com.mynotelibrary.dto.NoteRequestDTO;
 import com.mynotelibrary.dto.NoteResponseDTO;
+import com.mynotelibrary.enums.SUCCESS;
 import com.mynoteservice.entity.NoteEntity;
 import com.mynoteservice.exceptionhandler.InvalidInputException;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
@@ -152,7 +153,7 @@ public class NoteService implements INoteService {
             }
             noteRepository.delete(noteEntity.get());
 
-            return new ApiResponse("Note deleted successfully");
+            return new ApiResponse(SUCCESS.SUCCESS.name());
 
         }catch (Exception e){
             log.error("Note Delete <::> An Exception thrown : ",e);

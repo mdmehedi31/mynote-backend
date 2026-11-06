@@ -12,13 +12,9 @@ import com.mynoteservice.repository.UserPostRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
@@ -186,6 +182,15 @@ public class UserPostService implements IUserPostService {
         long totalElements = mongoTemplate.count(countQuery, "users");
 
         return new PageImpl<>(userList, pageable, totalElements);
+    }
+
+    @Override
+    public Page<UserPostResponse> getAllUsersPostsBy(int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+
+        Page<UserPostEntity> userPostResponsePage= userPostRepository.findAll(pageable);
+
+        return null;
     }
 
 }

@@ -58,5 +58,14 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
+    @GetMapping("/gets")
+    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(@RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "10") int size,
+                                                             @RequestParam(defaultValue = "createdAt") String sort,
+                                                             @RequestParam(defaultValue = "DESC") String sortDir) {
+        Page<UserResponseDTO> users = userService.getAllUsers(page, size, sort, sortDir);
+        return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
 
 }

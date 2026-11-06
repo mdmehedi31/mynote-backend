@@ -2,6 +2,7 @@ package com.mynotelibrary.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.mynotelibrary.enums.UserRole;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
 
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ public class UserResponseDTO extends ApiResponse {
     private List<String> interests;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String role;
+    private UserRole role;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDateTime createdAt;
@@ -66,11 +67,11 @@ public class UserResponseDTO extends ApiResponse {
         this.interests = interests;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 

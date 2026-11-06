@@ -1,5 +1,7 @@
 package com.mynotelibrary.dto;
 
+import com.mynotelibrary.enums.UserRole;
+
 import java.util.List;
 
 public class UserRequestDTO {
@@ -9,7 +11,7 @@ public class UserRequestDTO {
     private String email;
     private String password;
     private List<String> interests;
-    private String role;
+    private UserRole role;
 
     public String getName() {
         return name;
@@ -43,11 +45,11 @@ public class UserRequestDTO {
         this.interests = interests;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 

@@ -17,4 +17,6 @@ public interface IUserPostService {
     public ApiResponse deleteUserPost(String postId);
     public Page<UserWithPostDTO> getAllUserPostsByUserId(String userId, int page, int pageSize);
 
+    public Page<UserPostResponse> getAllUsersPostsBy(int page, int pageSize);
+
 }
