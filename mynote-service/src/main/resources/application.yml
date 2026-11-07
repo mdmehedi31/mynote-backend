@@ -1,8 +1,16 @@
 
 
+#spring:
+ # mongodb:
+#  host: ${DB_HOST:localhost}
+#   port: ${DB_PORT:27017}
+#   database: ${DB_NAME:mynote}
+#   auto-index-creation: true
+#   uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mynote}
+
 spring:
+  data:
+      mongodb:
+        auto-index-creation: true
   mongodb:
-    host: ${DB_HOST:localhost}
-    port: ${DB_PORT:27017}
-    database: ${DB_NAME:mynote}
-    auto-index-creation: true
+    uri: ${SPRING_DATA_MONGODB_URI:mongodb://${DB_HOST:localhost}:${DB_PORT:27017}/${DB_NAME:mynote}}
