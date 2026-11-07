@@ -11,4 +11,6 @@ public interface NoteRepository extends MongoRepository<NoteEntity, String> {
 
     Page<NoteEntity> findByCreatedById(String createdById, Pageable pageable);
     Page<NoteEntity> findAllByCreatedByIdAndTitleContainingIgnoreCaseOrCreatedByIdAndContentContaining(String createdById, String search, String createdById1, String search1, Pageable pageable);
+
+    void deleteAllByCreatedById(String createdById);
 }

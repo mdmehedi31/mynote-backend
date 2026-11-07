@@ -10,4 +10,6 @@ public interface UserPostRepository extends MongoRepository<UserPostEntity, Stri
 
     @Query("Select")
     Page<UserPostRepository> getUserPosts(Pageable pageable);
+
+    void deleteAllByCreatedById(String createdById);
 }

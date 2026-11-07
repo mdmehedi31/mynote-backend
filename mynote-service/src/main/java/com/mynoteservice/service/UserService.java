@@ -11,6 +11,8 @@ import com.mynoteservice.config.JwtAuthService;
 import com.mynoteservice.entity.UserEntity;
 import com.mynoteservice.exceptionhandler.InvalidInputException;
 import com.mynoteservice.exceptionhandler.NotFoundException;
+import com.mynoteservice.repository.NoteRepository;
+import com.mynoteservice.repository.UserPostRepository;
 import com.mynoteservice.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,6 +51,12 @@ public class UserService implements IUserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private NoteRepository noteRepository;
+
+    @Autowired
+    private UserPostRepository userPostRepository;
 
     @Override
     public UserAuthInfo createUser(UserRequestDTO userRequestDTO) {
@@ -186,6 +195,7 @@ public class UserService implements IUserService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public ApiResponse deleteUser(String userId) {
         try {
@@ -193,8 +203,10 @@ public class UserService implements IUserService {
             if (!userEntity.isPresent()){
                 throw new NotFoundException("User not found");
             }
+            noteRepository.deleteAllByCreatedById(userId);
+            userPostRepository.deleteAllByCreatedById(userId);
             userRepository.delete(userEntity.get());
-            return new  ApiResponse("User deleted successfully");
+            return new  ApiResponse(SUCCESS.SUCCESS.name());
         }catch (NotFoundException e){
             log.error("An Exception thrown : ", e);
             return new ApiResponse(e.getMessage());
@@ -237,22 +249,6 @@ public class UserService implements IUserService {
 
         Aggregation aggregation = Aggregation.newAggregation(pipelines);
 
-      /*  Aggregation aggregation = Aggregation.newAggregation(
-
-                Aggregation.match(Criteria.where("interests").in(selectedInterests)),
-
-                Aggregation.project("name", "email", "interests","role")
-                        .andExpression("_id").as("id"),
-
-                Aggregation.group("id")
-                        .first("name").as("name")
-                        .first("email").as("email")
-                        .first("interests").as("interests")
-                        .first("role").as("role"),
-
-                Aggregation.skip((long) skip),
-                Aggregation.limit(size)
-        );*/
         AggregationResults<UserResponseDTO> results = mongoTemplate.aggregate(
                 aggregation, "users", UserResponseDTO.class);
         List<UserResponseDTO> userList = results.getMappedResults();
@@ -308,6 +304,7 @@ public class UserService implements IUserService {
             Map<String, String> jwt =jwtAuthService.getJwtToken(userLoginDto);
             userAuthInfo.setJwtToken(jwt.get("token"));
             userAuthInfo.setUser(userDTO);
+            userAuthInfo.setMessage(SUCCESS.SUCCESS.name());
             return userAuthInfo;
         }catch (Exception e){
             log.error("An exception thrown : ",e);

@@ -3,6 +3,7 @@ package com.mynoteservice.controller;
 
 import com.mynotelibrary.dto.UserAuthInfo;
 import com.mynotelibrary.dto.UserRequestDTO;
+import com.mynotelibrary.dto.UserResponseDTO;
 import com.mynoteservice.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

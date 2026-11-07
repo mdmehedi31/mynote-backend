@@ -180,26 +180,20 @@ public class UserPostService implements IUserPostService {
         return new PageImpl<>(postList, pageable, totalElements);
     }
 
-
+    @Override
     public Page<UserPostResponse> getAllUsersPosts(int page, int size) {
         long totalElements = mongoTemplate.count(new Query(), "user_posts");
 
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.addFields().addField("cleanedCreatedById")
-                        .withValue(StringOperators.Trim.valueOf("$createdById"))
-                        .build(),
-                Aggregation.addFields().addField("createdByIdObj")
-                        .withValue(ConvertOperators.ToObjectId.toObjectId("$cleanedCreatedById"))
-                        .build(),
-                Aggregation.lookup("users", "createdByIdObj", "_id", "author"),
+                Aggregation.lookup("users", "createdById", "_id", "author"),
                 Aggregation.unwind("$author", true),
                 Aggregation.sort(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"),
                 Aggregation.project()
-                        .and("_id").as("id")
-                        .and("createdById").as("createdById")
-                        .and("author.name").as("createdByName")
-                        .and("author.email").as("createdByEmail")
-                        .and("content").as("content"),
+                        .andExpression("_id").as("id")
+                        .andExpression("createdById").as("createdBy")
+                        .andExpression("author.name").as("createdByName")
+                        .andExpression("author.email").as("createdByEmail")
+                        .andExpression("content").as("content"),
                 Aggregation.skip((long) page * size),
                 Aggregation.limit(size)
         );
