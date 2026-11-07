@@ -1,10 +1,13 @@
 package com.mynoteservice.service;
 
 
+import com.mynotelibrary.dto.UserAuthInfo;
+import com.mynotelibrary.enums.SUCCESS;
 import com.mynotelibrary.enums.UserRole;
 import com.mynotelibrary.dto.UserRequestDTO;
 import com.mynotelibrary.dto.UserResponseDTO;
 import com.mynotelibrary.exceptionmessage.ApiResponse;
+import com.mynoteservice.config.JwtAuthService;
 import com.mynoteservice.entity.UserEntity;
 import com.mynoteservice.exceptionhandler.InvalidInputException;
 import com.mynoteservice.exceptionhandler.NotFoundException;
@@ -18,11 +21,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,17 +43,27 @@ public class UserService implements IUserService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired
+    private JwtAuthService jwtAuthService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
-    public UserResponseDTO createUser(UserRequestDTO userRequestDTO) {
+    public UserAuthInfo createUser(UserRequestDTO userRequestDTO) {
         try{
 
             if (userRequestDTO.getEmail()==null || userRequestDTO.getEmail().isBlank()){
                 throw new InvalidInputException("Email can be empty");
             }
 
+            if (userRequestDTO.getPassword()==null || userRequestDTO.getPassword().isBlank()){
+                throw new InvalidInputException("Password can be empty");
+            }
+
             Optional<UserEntity> userIsExist = userRepository.findByEmail(userRequestDTO.getEmail());
             if (userIsExist.isPresent()){
-                return new UserResponseDTO("User already exist with this email");
+                return new UserAuthInfo("User already exist with this email");
             }
             UserEntity user = new UserEntity();
             user.setCreatedAt(LocalDateTime.now());
@@ -57,19 +72,27 @@ public class UserService implements IUserService {
             userEntityFromDTO(userRequestDTO, user);
             user=userRepository.save(user);
 
+            UserAuthInfo userAuthInfo = new UserAuthInfo();
             if (user!=null){
-                return userResponseDTOFromEntity(user);
+                Map<String, String> jwt =jwtAuthService.getJwtToken(userRequestDTO);
+                userAuthInfo.setJwtToken(jwt.get("token"));
+                UserResponseDTO userResponseDTO = userResponseDTOFromEntity(user);
+                userAuthInfo.setUser(userResponseDTO);
+                userAuthInfo.setMessage(SUCCESS.SUCCESS.name());
+
+            }else {
+                userAuthInfo.setMessage(SUCCESS.FAILED.name());
             }
 
-            return new UserResponseDTO("User creation failed");
+            return userAuthInfo;
 
         } catch (InvalidInputException e){
             log.error("An Exception thrown", e);
-            return new UserResponseDTO(e.getMessage());
+            return new UserAuthInfo(e.getMessage());
         }
         catch (Exception e){
             log.error("An Exception Thrown : ", e);
-            return new UserResponseDTO("Can't create user, Please try again later");
+            return new UserAuthInfo("Can't create user, Please try again later");
         }
     }
 
@@ -80,14 +103,17 @@ public class UserService implements IUserService {
         userResponseDTO.setName(userEntity.getName() != null ? userEntity.getName() : null);
         userResponseDTO.setCreatedAt(userEntity.getCreatedAt());
         userResponseDTO.setRole(userEntity.getRole() != null ? UserRole.valueOf(userEntity.getRole()) : UserRole.USER);
-        userResponseDTO.setInterests(userEntity.getInterests().isEmpty() ? null : userEntity.getInterests());
+
+        if (userEntity.getInterests()!=null && userEntity.getInterests().size()>0){
+            userResponseDTO.setInterests(userEntity.getInterests());
+        }
         return userResponseDTO;
     }
 
     private UserEntity userEntityFromDTO(UserRequestDTO userRequestDTO, UserEntity userEntity) {
 
         if (userRequestDTO.getPassword()!=null && !userRequestDTO.getPassword().isBlank()){
-            userEntity.setPassword(userEntity.getPassword());
+            userEntity.setPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
         }
 
         if (userRequestDTO.getName()!=null && !userRequestDTO.getName().isBlank()){
@@ -247,6 +273,46 @@ public class UserService implements IUserService {
         Page<UserEntity> userEntityPage = userRepository.findAll(pageable);
 
         return userEntityPage.map(this::userResponseDTOFromEntity);
+    }
+
+    @Override
+    public UserAuthInfo loginUser(UserRequestDTO userLoginDto) {
+        UserAuthInfo userAuthInfo= new UserAuthInfo();
+        UserResponseDTO userDTO=new UserResponseDTO();
+
+        try{
+            if(userLoginDto==null || userLoginDto.getEmail()==null){
+                userAuthInfo.setMessage("User registration info invalid");
+                return userAuthInfo;
+            }
+            Optional<UserEntity> userEntityOpt=userRepository.findByEmail(userLoginDto.getEmail());
+
+            if(!userEntityOpt.isPresent()){
+                userAuthInfo.setMessage("User not found with this email");
+                return userAuthInfo;
+            }
+
+            UserEntity userEntity=userEntityOpt.get();
+            String endCodedPassword=passwordEncoder.encode(userLoginDto.getPassword());
+
+            log.info("Endcoding password : " + endCodedPassword+", request pass : " +userEntity.getPassword());
+
+            boolean isMatchPassword = passwordEncoder.matches(userLoginDto.getPassword(),userEntity.getPassword());
+            if(!isMatchPassword){
+                userAuthInfo.setMessage("Password does not match");
+                return userAuthInfo;
+            }
+
+            userDTO=userResponseDTOFromEntity(userEntity);
+
+            Map<String, String> jwt =jwtAuthService.getJwtToken(userLoginDto);
+            userAuthInfo.setJwtToken(jwt.get("token"));
+            userAuthInfo.setUser(userDTO);
+            return userAuthInfo;
+        }catch (Exception e){
+            log.error("An exception thrown : ",e);
+            throw e;
+        }
     }
 
     private UserResponseDTO convertToUserResponseDTO(UserEntity userEntity){

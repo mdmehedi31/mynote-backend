@@ -22,6 +22,7 @@ public class NoteService implements INoteService {
 
     @Autowired
     private NoteRepository noteRepository;
+
     private static final Logger log = LoggerFactory.getLogger(NoteService.class);
 
     @Override

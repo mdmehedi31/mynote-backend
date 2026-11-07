@@ -20,11 +20,11 @@ public class UserController {
     @Autowired
     private IUserService userService;
 
-    @PostMapping("/create")
+   /* @PostMapping("/create")
     public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO userRequestDTO) {
         UserResponseDTO createdUser = userService.createUser(userRequestDTO);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
-    }
+    }*/
 
     @PutMapping("/update")
     public ResponseEntity<UserResponseDTO> updateUser(@RequestBody UserRequestDTO userRequestDTO) {
